@@ -2,13 +2,16 @@ import os
 import requests
 import json
 
+# Fallback mesaj
+msg = "chore: küçük değişiklik"
+
 API_KEY = os.environ.get("GEMINI_API_KEY")
-if not API_KEY:
-    raise ValueError("GEMINI_API_KEY environment variable is not set!")
+if API_KEY:
+    URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
 
-URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
-
-prompt = """
+    payload = {
+        "contents": [
+            {"parts": [{"text": """
 Generate a short, natural Git commit message.
 
 Rules:
@@ -21,33 +24,23 @@ Examples:
 docs: small clarification
 chore: minor cleanup
 refactor: tiny improvement
-"""
+""" }]}
+        ]
+    }
 
-payload = {
-    "contents": [
-        {
-            "parts": [
-                {"text": prompt}
-            ]
-        }
-    ]
-}
+    try:
+        res = requests.post(URL, json=payload, timeout=10)
+        res.raise_for_status()
+        data = res.json()
+        if "candidates" in data and len(data["candidates"]) > 0:
+            msg = data["candidates"][0]["content"]["parts"][0].get("text", msg).strip()
+    except Exception as e:
+        print(f"⚠️ Gemini API hatası: {e}")
+else:
+    print("⚠️ GEMINI_API_KEY yok, fallback mesaj kullanılıyor")
 
-try:
-    res = requests.post(URL, json=payload, timeout=10)
-    res.raise_for_status()
-    data = res.json()
-
-    # fallback mesaj
-    msg = "chore: küçük değişiklik"
-    if "candidates" in data and len(data["candidates"]) > 0:
-        msg = data["candidates"][0]["content"]["parts"][0].get("text", msg).strip()
-
-except (requests.RequestException, KeyError, IndexError, json.JSONDecodeError) as e:
-    print(f"⚠️ Gemini API hatası: {e}")
-    msg = "chore: küçük değişiklik"
-
-with open("commit_msg.txt", "w", encoding="utf-8") as f:
+# Her koşulda commit_msg.txt yaz
+with open("../commit_msg.txt", "w", encoding="utf-8") as f:
     f.write(msg)
 
 print("Commit message:", msg)
