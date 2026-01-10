@@ -34,7 +34,7 @@ jobs:
         run: |
           REPO=$(cat selected_repo.txt)
           echo "Seçilen repo: $REPO"
-          git clone https://github.com/$REPO target
+          git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/$REPO target
 
       - name: Değişiklik yap
         run: |
