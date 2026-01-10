@@ -58,7 +58,7 @@ jobs:
 
             # Commit işlemi
             git config user.name "beserion"
-            git config user.email "github@users.noreply.github.com"
+            git config user.email "hyk41hyk@gmail.com"
             git add .
             git diff --cached --quiet || git commit -m "$(cat ../commit_msg.txt)"
           done
