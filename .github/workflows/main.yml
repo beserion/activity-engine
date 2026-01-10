@@ -34,7 +34,7 @@ jobs:
         run: |
           REPO=$(cat selected_repo.txt)
           echo "Seçilen repo: $REPO"
-          git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/$REPO target
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$REPO target
 
       - name: Değişiklik yap
         run: |
@@ -52,5 +52,6 @@ jobs:
           git config user.name "beserion"
           git config user.email "github@users.noreply.github.com"
           git add .
-          git commit -m "$(cat ../commit_msg.txt)"
+          # Değişiklik yoksa commit atma
+          git diff --cached --quiet || git commit -m "$(cat ../commit_msg.txt)"
           git push
