@@ -45,6 +45,8 @@ jobs:
 
       # 6️⃣ Commit loop
       - name: Commit loop
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # AI commit için secret
         run: |
           cd target
           for i in $(seq 1 $COMMITS); do
@@ -52,7 +54,7 @@ jobs:
             python ../scripts/make_change.py
 
             # AI commit mesajı (fallback dahil)
-            python ../scripts/ai_commit_message.py
+            python ../scripts/ai_commit_message.py || echo "⚠️ AI mesaj hatası, fallback mesaj kullanıldı"
 
             # Commit işlemi
             git config user.name "beserion"
