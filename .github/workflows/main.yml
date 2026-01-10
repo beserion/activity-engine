@@ -2,7 +2,7 @@ name: Natural Contribution Engine
 
 on:
   schedule:
-    - cron: "0 6 * * *"  # her gün 06:00
+    - cron: "0 6 * * *"  # her gün 06:00 başla
   workflow_dispatch:
 
 permissions:
@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Repo çek
+      # 1️⃣ Repo'yu çek
       - name: Repo'yu çek
         uses: actions/checkout@v4
 
-      # 2️⃣ Günün pas geçme kontrolü (%15)
+      # 2️⃣ Günün pas geçme kontrolü (%15 chance)
       - name: Bugün pas mı geçiyoruz? (%15 chance)
         run: |
           if [ $((RANDOM % 100)) -lt 15 ]; then
@@ -36,33 +36,40 @@ jobs:
           echo "Seçilen repo: $REPO"
           git clone https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/$REPO target
 
-      # 5️⃣ Commit sayısını belirle (5-33 arası)
-      - name: Commit sayısını belirle
-        run: |
-          COMMITS=$((5 + RANDOM % 29))
-          echo "Bugün $COMMITS commit yapılacak"
-          echo "COMMITS=$COMMITS" >> $GITHUB_ENV
-
-      # 6️⃣ Commit loop
-      - name: Commit loop
+      # 5️⃣ Gün içi seans loop
+      - name: Gün içi seanslar
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # AI commit için secret
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
+          # 1-3 seans rastgele
+          SESSIONS=$((1 + RANDOM % 3))
+          echo "Bugün $SESSIONS seans olacak"
+
           cd target
-          for i in $(seq 1 $COMMITS); do
-            # Değişiklik yap
-            python ../scripts/make_change.py
+          for s in $(seq 1 $SESSIONS); do
+            # Random bekleme: 0-6 saat (0-21600 sn)
+            SLEEP=$((RANDOM % 21600))
+            echo "Seans $s için $SLEEP saniye bekleniyor"
+            sleep $SLEEP
 
-            # AI commit mesajı (fallback dahil)
-            python ../scripts/ai_commit_message.py || echo "⚠️ AI mesaj hatası, fallback mesaj kullanıldı"
+            # Random commit sayısı
+            COMMITS=$((5 + RANDOM % 29))
+            echo "Seans $s için $COMMITS commit yapılacak"
 
-            # Commit işlemi
-            git config user.name "beserion"
-            git config user.email "hyk41hyk@gmail.com"
-            git add .
-            git diff --cached --quiet || git commit -m "$(cat ../commit_msg.txt)"
+            # Commit loop
+            for i in $(seq 1 $COMMITS); do
+              python ../scripts/make_change.py
+
+              # AI commit mesajı (fallback)
+              python ../scripts/ai_commit_message.py || echo "⚠️ AI mesaj hatası, fallback mesaj kullanıldı"
+
+              git config user.name "beserion"
+              git config user.email "hyk41hyk@gmail.com"
+              git add .
+              git diff --cached --quiet || git commit -m "$(cat ../commit_msg.txt)"
+            done
+
+            # Push seans sonunda
+            REPO=$(cat ../selected_repo.txt)
+            git push https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/$REPO
           done
-
-          # Push tüm commitler
-          REPO=$(cat ../selected_repo.txt)
-          git push https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/$REPO
