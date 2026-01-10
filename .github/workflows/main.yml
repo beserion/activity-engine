@@ -27,7 +27,7 @@ jobs:
         run: |
           CHANCE=$((RANDOM % 100))
           echo "Zar sonucu: $CHANCE (Gerekli: < 8)"
-          if [ $CHANCE -ge 8 ]; then
+          if [ $CHANCE -ge 12 ]; then
             echo "💤 Bu saat pas geçildi. Uyumaya devam."
             exit 0
           fi
