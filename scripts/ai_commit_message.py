@@ -38,16 +38,15 @@ try:
     res.raise_for_status()
     data = res.json()
 
-    # 🛡️ API yanıt kontrolü
-    msg = "chore: küçük değişiklik"  # fallback mesaj
+    # fallback mesaj
+    msg = "chore: küçük değişiklik"
     if "candidates" in data and len(data["candidates"]) > 0:
         msg = data["candidates"][0]["content"]["parts"][0].get("text", msg).strip()
 
 except (requests.RequestException, KeyError, IndexError, json.JSONDecodeError) as e:
     print(f"⚠️ Gemini API hatası: {e}")
-    msg = "chore: küçük değişiklik"  # fallback mesaj
+    msg = "chore: küçük değişiklik"
 
-# commit mesajını yaz
 with open("commit_msg.txt", "w", encoding="utf-8") as f:
     f.write(msg)
 
