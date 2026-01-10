@@ -54,4 +54,4 @@ jobs:
           git add .
           # Değişiklik yoksa commit atma
           git diff --cached --quiet || git commit -m "$(cat ../commit_msg.txt)"
-          git push
+          git push https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/$REPO
