@@ -2,10 +2,7 @@ name: Natural Contribution Engine
 
 on:
   schedule:
-    # Günde 3 farklı saat → doğal görünüm
-    - cron: "11 6 * * *"
-    - cron: "37 14 * * *"
-    - cron: "53 21 * * *"
+    - cron: "0 6 * * *"  # her gün 06:00
   workflow_dispatch:
 
 permissions:
@@ -16,43 +13,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Repo çek
       - name: Repo'yu çek
         uses: actions/checkout@v4
 
-      - name: Bugün çalışıyor muyuz?
+      # 2️⃣ Günün pas geçme kontrolü (%15)
+      - name: Bugün pas mı geçiyoruz? (%15 chance)
         run: |
-          # %33 ihtimalle çalışır, %66 chill
-          if [ $((RANDOM % 3)) -ne 0 ]; then
-            echo "Bugün pas geçildi 😴"
+          if [ $((RANDOM % 100)) -lt 15 ]; then
+            echo "Bugün chill 😴, hiç commit yok"
             exit 0
           fi
 
+      # 3️⃣ Repo seç
       - name: Repo seç
         run: python scripts/pick_repo.py
 
+      # 4️⃣ Repo clone (PAT ile)
       - name: Hedef repo clone
         run: |
           REPO=$(cat selected_repo.txt)
           echo "Seçilen repo: $REPO"
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$REPO target
+          git clone https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/$REPO target
 
-      - name: Değişiklik yap
+      # 5️⃣ Commit sayısını belirle (5-33 arası)
+      - name: Commit sayısını belirle
+        run: |
+          COMMITS=$((5 + RANDOM % 29))
+          echo "Bugün $COMMITS commit yapılacak"
+          echo "COMMITS=$COMMITS" >> $GITHUB_ENV
+
+      # 6️⃣ Commit loop
+      - name: Commit loop
         run: |
           cd target
-          python ../scripts/make_change.py
+          for i in $(seq 1 $COMMITS); do
+            # Değişiklik yap
+            python ../scripts/make_change.py
 
-      - name: AI commit mesajı (Gemini)
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python scripts/ai_commit_message.py
+            # AI commit mesajı (fallback dahil)
+            python ../scripts/ai_commit_message.py
 
-      - name: Commit & push
-        run: |
-          cd target
-          git config user.name "beserion"
-          git config user.email "github@users.noreply.github.com"
-          git add .
-          git diff --cached --quiet || git commit -m "$(cat ../commit_msg.txt)"
+            # Commit işlemi
+            git config user.name "beserion"
+            git config user.email "github@users.noreply.github.com"
+            git add .
+            git diff --cached --quiet || git commit -m "$(cat ../commit_msg.txt)"
+          done
+
+          # Push tüm commitler
           REPO=$(cat ../selected_repo.txt)
           git push https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/$REPO
-
