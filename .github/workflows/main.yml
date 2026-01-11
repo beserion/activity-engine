@@ -26,8 +26,8 @@ jobs:
         if: github.event_name == 'schedule'
         run: |
           CHANCE=$((RANDOM % 100))
-          echo "Zar sonucu: $CHANCE (Gerekli: < 8)"
-          if [ $CHANCE -ge 12 ]; then
+          echo "Zar sonucu: $CHANCE (Gerekli: < 20)"
+          if [ $CHANCE -ge 20 ]; then
             echo "💤 Bu saat pas geçildi. Uyumaya devam."
             exit 0
           fi
