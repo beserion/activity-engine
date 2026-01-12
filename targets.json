@@ -2,5 +2,10 @@
   "beserion/Distributed-Worker-System",
   "beserion/Custom-Memory-Allocator",
   "beserion/Beseri-ai",
+  "beserion/42-Piscine",
+  "beserion/Netka",
+  "beserion/42-Piscine-BSQ",
+  "beserion/minishell",
+  "beserion/BSS",
   "beserion/Security-Scanner"
 ]
