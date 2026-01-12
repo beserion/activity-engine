@@ -2,8 +2,6 @@ name: Natural Contribution Engine
 
 on:
   schedule:
-    # Her saat başı çalışır (00:00, 01:00... 23:00)
-    # Merak etme, her saat commit atmayacak! Aşağıdaki "Zar Atma" adımı bunu filtreleyecek.
     - cron: "0 * * * *"
   workflow_dispatch:
 
@@ -15,13 +13,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Ana Repo'yu çek (Scriptlere erişmek için)
       - name: Repo'yu çek
         uses: actions/checkout@v4
 
-      # 2️⃣ ZAR ATMA (Günde 1-3 kez çalışma mantığı)
-      # Her saat %8 ihtimalle çalışır. (24 saat * 0.08 = ~1.9 run/gün)
-      # Manuel tetikleme (workflow_dispatch) yapılırsa bu kontrolü atlar.
       - name: Şanslı saat mi? (Dice Roll)
         if: github.event_name == 'schedule'
         run: |
@@ -33,55 +27,43 @@ jobs:
           fi
           echo "🎉 Şanslı saat! Çalışmaya başlıyoruz."
 
-      # 3️⃣ Python Bağımlılıklarını Kur (AI hatası için çözüm)
       - name: Python kütüphanelerini kur
         run: pip install requests
 
-      # 4️⃣ Hedef Repo Seçimi
       - name: Repo seç
         run: python scripts/pick_repo.py
 
-      # 5️⃣ Hedef Repo Clone (PAT ile)
       - name: Hedef repo clone
         run: |
           REPO=$(cat selected_repo.txt)
           echo "Seçilen repo: $REPO"
-          # Target klasörüne clone'luyoruz
           git clone https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/$REPO target
 
-      # 6️⃣ Commit sayısını belirle (Burst başına 2-12 arası)
-      # Günde birkaç kez çalışacağı için sayıları biraz düşürdük, daha doğal dursun.
       - name: Commit sayısını belirle
         run: |
           COMMITS=$((2 + RANDOM % 11))
           echo "Bu seansta $COMMITS adet commit atılacak."
           echo "COMMITS=$COMMITS" >> $GITHUB_ENV
 
-      # 7️⃣ Commit Döngüsü
       - name: Commit loop
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           cd target
           
-          # Git kullanıcı ayarları
           git config user.name "beserion"
           git config user.email "hyk41hyk@gmail.com"
 
           for i in $(seq 1 $COMMITS); do
             echo "--- İşleniyor: $i / $COMMITS ---"
             
-            # Değişiklik yap (Dosya güncelleme)
-            # Script bir üst dizinde olduğu için ../ ile çağırıyoruz
             python ../scripts/make_change.py
 
-            # AI Mesajı Oluştur (Hata verirse durmaz, devam eder)
             python ../scripts/ai_commit_message.py || echo "⚠️ AI hata verdi, devam ediliyor."
 
             # Commit işlemi
             git add .
             
-            # Commit mesajını dosyadan oku, yoksa fallback kullan
             if [ -f "../commit_msg.txt" ]; then
               MSG=$(cat ../commit_msg.txt)
             else
@@ -90,11 +72,9 @@ jobs:
             
             git commit -m "$MSG"
             
-            # GitHub'ı floodlamamak için her commit arası 2-10 saniye bekle
             sleep $((2 + RANDOM % 9))
           done
 
-          # 8️⃣ Push (Hepsi bittikten sonra tek seferde)
-          echo "🚀 Pushlanıyor..."
+          echo "Pushlanıyor..."
           REPO=$(cat ../selected_repo.txt)
           git push https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/$REPO
