@@ -41,7 +41,7 @@ jobs:
 
       - name: Commit sayısını belirle
         run: |
-          COMMITS=$((2 + RANDOM % 11))
+          COMMITS=$((2 + RANDOM % 3))
           echo "Bu seansta $COMMITS adet commit atılacak."
           echo "COMMITS=$COMMITS" >> $GITHUB_ENV
 
